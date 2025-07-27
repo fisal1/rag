@@ -6,11 +6,23 @@ from qdrant_client.http.models import PointStruct,VectorParams
 
 import httpx
 import uuid
+from fastapi.middleware.cors import CORSMiddleware
+import math
 
 
 
 # Initialize FastAPI
 app = FastAPI()
+# Configure CORS middleware to allow all origins, methods, and headers
+origins = ["*"]  # Allows all origins
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,  # Set to True if your API uses credentials (cookies, authorization headers)
+    allow_methods=["*"],  # Allows all HTTP methods (GET, POST, PUT, DELETE, etc.)
+    allow_headers=["*"],  # Allows all headers
+)
 
 from fastapi import UploadFile, File
 import fitz  # PyMuPDF
@@ -53,7 +65,7 @@ async def get_gemini_embedding(text: str):
         }
     }
 
-    print(json_data)
+  
 
     async with httpx.AsyncClient() as client:
         try:
@@ -70,10 +82,8 @@ async def get_gemini_embedding(text: str):
 @app.post("/add_document")
 async def add_document(doc: DocumentInput):
     try:
-        print("Reached Add Document")
         # Step 1: Generate embedding using Gemini
         embedding = await get_gemini_embedding(doc.content)
-        print("Embedding Post")
         point_id = str(uuid.uuid4())
 
         # Step 2: Check if collection exists
@@ -97,14 +107,13 @@ async def add_document(doc: DocumentInput):
             vector=embedding,
             payload={"content": doc.content},
         )
-        print("Point End")
+        
 
         qdrant.upsert(
             collection_name=COLLECTION_NAME,
             points=[point]
         )
 
-        print("Data has been added successfully")
 
         return {"status": "success", "id": point_id}
 
@@ -139,7 +148,15 @@ async def search_document(
 
 
 def split_text_into_chunks(text, chunk_size=CHUNK_SIZE):
-    return [text[i:i + chunk_size] for i in range(0, len(text), chunk_size)]
+    text_length = len(text)
+    num_chunks = math.ceil(text_length / chunk_size)
+
+    # Recalculate a slightly larger chunk size so the text is evenly divided
+    adjusted_chunk_size = math.ceil(text_length / num_chunks)
+
+    chunks = [text[i:i + adjusted_chunk_size] for i in range(0, text_length, adjusted_chunk_size)]
+    return chunks
+
 
 @app.post("/upload_pdfs")
 async def upload_pdfs(files: List[UploadFile] = File(...)):

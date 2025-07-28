@@ -4,3 +4,5 @@ httpx
 python-dotenv
 qdrant-client
 pydantic
+python-multipart
+PyMuPDF

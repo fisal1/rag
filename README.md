@@ -10,19 +10,19 @@ uvicorn main:app --reload --port 8000
 
 add .env file in your backend with this variable:
 -------------
-GEMINI_API_KEY=,
+GEMINI_API_KEY=
 
-QDRANT_API_KEY=,
+QDRANT_API_KEY=
 
-QDRANT_URL=,
+QDRANT_URL=
 
 COLLECTION_NAME=documents
 
 for frontenf:
 ---------
-cd frontend,
+cd frontend
 
-npm install,
+npm install
 
 npm start
 
